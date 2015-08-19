@@ -8,7 +8,7 @@ njs_path                  = require 'path'
 #...........................................................................................................
 CND                       = require 'cnd'
 rpr                       = CND.rpr.bind CND
-badge                     = 'FUSE/run'
+badge                     = 'FUSEQL/main'
 log                       = CND.get_logger 'plain',   badge
 info                      = CND.get_logger 'info',    badge
 alert                     = CND.get_logger 'alert',   badge
@@ -39,11 +39,11 @@ db        = new SQLITE3.Database db_route
 # db        = new SQLITE3.Database ':memory:'
 
 
-fallback_time = 0
-fallback_size = 0
+fallback_time = +new Date()
+fallback_size = +new Date()
 fallback_mode = 0o100644
-fallback_uid  = 1000
-fallback_gid  = 1000
+fallback_uid  = process.getuid()
+fallback_gid  = process.getgid()
 
 
 db.serialize ->
@@ -81,7 +81,7 @@ sqlitefs =
 
   #---------------------------------------------------------------------------------------------------------
   readdir: ( route, handler ) ->
-    echo 'readdir(%s)', route
+    echo "readdir         #{rpr route}"
     sql = """
       SELECT  home, name
       FROM    main
@@ -96,10 +96,10 @@ sqlitefs =
       { home, name, } = record
       route = home + name
       Z.push route
-      debug '©ZYjLy', record
     db.each sql, route, on_data, ( error, count ) =>
       throw error if error?
       help "retrieved #{count} records"
+      debug '©U47Yh', Z
       handler null, Z
   # if route == '/'
     #   filenames = ( "file-#{idx}" for idx in [ 0 .. 10 ] )
@@ -110,13 +110,13 @@ sqlitefs =
 
   #---------------------------------------------------------------------------------------------------------
   getattr: ( route, handler ) ->
-    info "getattr #{rpr route}"
+    info "getattr         #{rpr route}"
     switch route
       when '/' #, '/._.', '/.hidden', '/mach_kernel'
         handler null,
-          mtime: new Date
-          atime: new Date
-          ctime: new Date
+          mtime: new Date()
+          atime: new Date()
+          ctime: new Date()
           size: 100
           mode: 16877
           uid: process.getuid()
@@ -127,7 +127,7 @@ sqlitefs =
         home = route[ 0 ]
         name = route[ 1 .. ]
         sql = """
-          SELECT  home, name, mtime, atime, ctime, size, mode, uid, gid, content
+          SELECT  mtime, atime, ctime, size, mode, uid, gid
           FROM    main
           WHERE   home = ? AND name = ?
           """
@@ -135,59 +135,60 @@ sqlitefs =
           throw error if error?
           return handler null unless record?
           debug '©nUEmT', record
-          { home
-            name
-            mtime
-            atime
-            ctime
-            size
-            mode
-            uid
-            gid
-            content   } = record
-          # route         = home + name
-          handler null,
-            mtime:  mtime
-            atime:  atime
-            ctime:  ctime
-            size:   size
-            mode:   mode
-            uid:    uid
-            gid:    gid
+          # { home
+          #   name
+          #   mtime
+          #   atime
+          #   ctime
+          #   size
+          #   mode
+          #   uid
+          #   gid     } = record
+          # # route         = home + name
+          file_description =
+            mtime:  new Date record[ 'mtime' ]
+            atime:  new Date record[ 'atime' ]
+            ctime:  new Date record[ 'ctime' ]
+            size:   record[ 'size'  ]
+            mode:   record[ 'mode'  ]
+            uid:    record[ 'uid'   ]
+            gid:    record[ 'gid'   ]
+          debug '©hFS9F', file_description
+          handler null, file_description
       # else
       #   handler FUSE.ENOENT
     return null
 
   #---------------------------------------------------------------------------------------------------------
   open: (route, flags, handler) ->
-    info 'open(%s, %d)', route, flags
+    info "open            #{rpr route}, #{rpr flags}"
     handler 0, 42
     # 42 is an fd
     return
 
   #---------------------------------------------------------------------------------------------------------
   read: ( route, fd, buf, len, pos, handler ) ->
-    info 'read(%s, %d, %d, %d)', route, fd, len, pos
+    info "read            #{rpr route}, #{rpr fd}, #{rpr buf}, #{rpr len}, #{rpr pos}"
     relative_route  = route
     relative_route  = "/#{route}" unless relative_route[ 0 ] is '/'
     relative_route  = ".#{route}" unless relative_route[ 0 ] is '.'
     locator         = njs_path.resolve mount_locator, relative_route
-    info '©jQFeh', relative_route
-    info '©Qpb1T', mount_locator
-    info '©zZVe3', locator
+    # info '©jQFeh', relative_route
+    # info '©Qpb1T', mount_locator
+    # info '©zZVe3', locator
     content = """
       hello world
       from #{locator}
       \n"""
-    content = content.slice(pos)
+    content = content.slice pos
     if !content
-      return handler(0)
+      return handler null
     buf.write content
     handler content.length
 
 #-----------------------------------------------------------------------------------------------------------
-# FUSE.mount mount_route, demofs
-FUSE.mount mount_route, sqlitefs
+FUSE.mount mount_route, ( require './demofs' )
+# FUSE.mount mount_route, sqlitefs
 
 #-----------------------------------------------------------------------------------------------------------
 process.on 'SIGINT', ->

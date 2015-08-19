@@ -1,12 +1,41 @@
 
 
 
+
+############################################################################################################
+njs_path                  = require 'path'
+# njs_fs                    = require 'fs'
+#...........................................................................................................
+CND                       = require 'cnd'
+rpr                       = CND.rpr.bind CND
+badge                     = 'FUSEQL/demofs'
+log                       = CND.get_logger 'plain',   badge
+info                      = CND.get_logger 'info',    badge
+alert                     = CND.get_logger 'alert',   badge
+debug                     = CND.get_logger 'debug',   badge
+warn                      = CND.get_logger 'warn',    badge
+urge                      = CND.get_logger 'urge',    badge
+whisper                   = CND.get_logger 'whisper', badge
+help                      = CND.get_logger 'help',    badge
+echo                      = CND.echo.bind CND
+#...........................................................................................................
+# suspend                   = require 'coffeenode-suspend'
+# step                      = suspend.step
+# immediately               = suspend.immediately
+# after                     = suspend.after
+# sleep                     = suspend.sleep
+#...........................................................................................................
+FUSE                      = require 'fuse-bindings'
+mount_route               = './mnt'
+mount_locator             = njs_path.resolve __dirname, mount_route
+
+
 #-----------------------------------------------------------------------------------------------------------
-demofs =
+module.exports = demofs =
 
   #---------------------------------------------------------------------------------------------------------
   readdir: ( route, handler ) ->
-    echo 'readdir(%s)', route
+    echo "readdir         #{rpr route}"
     if route == '/'
       filenames = ( "file-#{idx}" for idx in [ 0 .. 10 ] )
       filenames.push 'test'
@@ -16,7 +45,7 @@ demofs =
 
   #---------------------------------------------------------------------------------------------------------
   getattr: (route, handler) ->
-    info 'getattr(%s)', route
+    info "getattr         #{rpr route}"
     switch route
       when '/'
         handler 0,
@@ -51,21 +80,21 @@ demofs =
 
   #---------------------------------------------------------------------------------------------------------
   open: (route, flags, handler) ->
-    info 'open(%s, %d)', route, flags
+    info "open            #{rpr route}, #{rpr flags}"
     handler 0, 42
     # 42 is an fd
     return
 
   #---------------------------------------------------------------------------------------------------------
   read: ( route, fd, buf, len, pos, handler ) ->
-    info 'read(%s, %d, %d, %d)', route, fd, len, pos
+    info "read            #{rpr route}, #{rpr fd}, #{rpr buf}, #{rpr len}, #{rpr pos}"
     relative_route  = route
     relative_route  = "/#{route}" unless relative_route[ 0 ] is '/'
     relative_route  = ".#{route}" unless relative_route[ 0 ] is '.'
     locator         = njs_path.resolve mount_locator, relative_route
-    info '©jQFeh', relative_route
-    info '©Qpb1T', mount_locator
-    info '©zZVe3', locator
+    # info '©jQFeh', relative_route
+    # info '©Qpb1T', mount_locator
+    # info '©zZVe3', locator
     content = """
       hello world
       from #{locator}
