@@ -1,6 +1,6 @@
 {
   "name": "fuseql",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "a FUSE virtual filesystem backed by an SQLite database",
   "main": "lib/main.js",
   "scripts": {
