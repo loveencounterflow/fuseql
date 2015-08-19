@@ -24,10 +24,14 @@ echo                      = CND.echo.bind CND
 # immediately               = suspend.immediately
 # after                     = suspend.after
 # sleep                     = suspend.sleep
+later                     = setImmediate
 #...........................................................................................................
 FUSE                      = require 'fuse-bindings'
 mount_route               = './mnt'
 mount_locator             = njs_path.resolve __dirname, mount_route
+#...........................................................................................................
+OK                        = 0
+ERROR                     = -1
 
 
 #-----------------------------------------------------------------------------------------------------------
@@ -39,16 +43,16 @@ module.exports = demofs =
     if route == '/'
       filenames = ( "file-#{idx}" for idx in [ 0 .. 10 ] )
       filenames.push 'test'
-      return handler null, filenames
-    handler null
+      return later -> handler OK, filenames
+    handler OK
     return
 
   #---------------------------------------------------------------------------------------------------------
-  getattr: (route, handler) ->
+  getattr: ( route, handler ) ->
     info "getattr         #{rpr route}"
     switch route
       when '/'
-        handler 0,
+        later -> handler OK,
           mtime: new Date
           atime: new Date
           ctime: new Date
@@ -57,7 +61,7 @@ module.exports = demofs =
           uid: process.getuid()
           gid: process.getgid()
       when '/test'
-        handler 0,
+        later -> handler OK,
           mtime: new Date
           atime: new Date
           ctime: new Date
@@ -66,7 +70,7 @@ module.exports = demofs =
           uid: process.getuid()
           gid: process.getgid()
       else
-        handler 0,
+        later -> handler OK,
           mtime: new Date
           atime: new Date
           ctime: new Date
@@ -81,13 +85,13 @@ module.exports = demofs =
   #---------------------------------------------------------------------------------------------------------
   open: (route, flags, handler) ->
     info "open            #{rpr route}, #{rpr flags}"
-    handler 0, 42
+    later -> handler OK, 42
     # 42 is an fd
-    return
+    return null
 
   #---------------------------------------------------------------------------------------------------------
-  read: ( route, fd, buf, len, pos, handler ) ->
-    info "read            #{rpr route}, #{rpr fd}, #{rpr buf}, #{rpr len}, #{rpr pos}"
+  read: ( route, fd, buffer, length, position, handler ) ->
+    info "read            #{rpr route}, #{rpr fd}, #{rpr buffer}, #{rpr length}, #{rpr position}"
     relative_route  = route
     relative_route  = "/#{route}" unless relative_route[ 0 ] is '/'
     relative_route  = ".#{route}" unless relative_route[ 0 ] is '.'
@@ -99,8 +103,9 @@ module.exports = demofs =
       hello world
       from #{locator}
       \n"""
-    content = content.slice(pos)
-    if !content
-      return handler(0)
-    buf.write content
-    handler content.length
+    content = content.slice position
+    return handler 0 if content.length is 0
+    buffer.write content, 'utf-8'
+    later -> handler Buffer.byteLength content, 'utf-8'
+    return null
+

@@ -1,4 +1,3 @@
-![](https://github.com/loveencounterflow/hollerith/raw/master/art/hollerith-logo-v2.png)
 
 
 - [fuseql](#fuseql)
