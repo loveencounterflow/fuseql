@@ -1,0 +1,21 @@
+{
+  "name": "test-fuse-bindings",
+  "version": "1.0.0",
+  "description": "",
+  "main": "run.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "cnd": "^1.0.8",
+    "fuse-bindings": "^2.5.0",
+    "sqlite3": "^3.0.10"
+  },
+  "devDependencies": {
+    "gulp": "^3.9.0",
+    "gulp-coffee": "^2.3.1",
+    "gulp-sourcemaps": "^1.5.2"
+  }
+}
