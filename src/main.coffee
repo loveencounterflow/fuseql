@@ -37,6 +37,9 @@ warn "removing DB at #{db_route}"
 #...........................................................................................................
 db        = new SQLITE3.Database db_route
 # db        = new SQLITE3.Database ':memory:'
+#...........................................................................................................
+OK                        = 0
+ERROR                     = -1
 
 
 fallback_time = +new Date()
@@ -100,12 +103,12 @@ sqlitefs =
       throw error if error?
       help "retrieved #{count} records"
       debug '©U47Yh', Z
-      handler null, Z
+      handler OK, Z
   # if route == '/'
     #   filenames = ( "file-#{idx}" for idx in [ 0 .. 10 ] )
     #   filenames.push 'test'
-    #   return handler null, filenames
-    # handler null
+    #   return handler OK, filenames
+    # handler OK
     return
 
   #---------------------------------------------------------------------------------------------------------
@@ -113,7 +116,7 @@ sqlitefs =
     info "getattr         #{rpr route}"
     switch route
       when '/' #, '/._.', '/.hidden', '/mach_kernel'
-        handler null,
+        handler OK,
           mtime: new Date()
           atime: new Date()
           ctime: new Date()
@@ -133,7 +136,7 @@ sqlitefs =
           """
         db.get sql, home, name, ( error, record ) ->
           throw error if error?
-          return handler null unless record?
+          return handler OK unless record?
           debug '©nUEmT', record
           # { home
           #   name
@@ -154,7 +157,7 @@ sqlitefs =
             uid:    record[ 'uid'   ]
             gid:    record[ 'gid'   ]
           debug '©hFS9F', file_description
-          handler null, file_description
+          handler OK, file_description
       # else
       #   handler FUSE.ENOENT
     return null
@@ -162,7 +165,7 @@ sqlitefs =
   #---------------------------------------------------------------------------------------------------------
   open: (route, flags, handler) ->
     info "open            #{rpr route}, #{rpr flags}"
-    handler 0, 42
+    handler OK, 42
     # 42 is an fd
     return
 
@@ -182,13 +185,13 @@ sqlitefs =
       \n"""
     content = content.slice pos
     if !content
-      return handler null
+      return handler OK
     buf.write content
     handler content.length
 
 #-----------------------------------------------------------------------------------------------------------
-FUSE.mount mount_route, ( require './demofs' )
-# FUSE.mount mount_route, sqlitefs
+# FUSE.mount mount_route, ( require './demofs' )
+FUSE.mount mount_route, sqlitefs
 
 #-----------------------------------------------------------------------------------------------------------
 process.on 'SIGINT', ->
