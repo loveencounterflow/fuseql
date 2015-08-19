@@ -1,10 +1,12 @@
 {
-  "name": "test-fuse-bindings",
+  "name": "fuseql",
   "version": "1.0.0",
-  "description": "",
-  "main": "run.js",
+  "description": "a FUSE virtual filesystem backed by an SQLite database",
+  "main": "lib/main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "gulp --harmony build",
+    "start": "node --harmony lib/main.js",
+    "test": "npm build && node --harmony lib/tests.js"
   },
   "author": "",
   "license": "MIT",
