@@ -109,3 +109,10 @@ module.exports = demofs =
     later -> handler Buffer.byteLength content, 'utf-8'
     return null
 
+  #---------------------------------------------------------------------------------------------------------
+  write: ( route, fd, buffer, length, position, handler ) ->
+    warn "write           #{rpr route}, #{rpr fd}, #{rpr buffer}, #{rpr length}, #{rpr position}"
+    data = buffer.slice 0, length
+    debug '©pqgx3', data
+    debug '©pqgx3', data.toString()
+    handler 10
