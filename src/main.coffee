@@ -258,27 +258,38 @@ sqlitefs =
       namemax:  1000000
     handler result_codes[ 'ok' ], fs_description
 
-#-----------------------------------------------------------------------------------------------------------
-do ->
-  names = """
-  access chmod chown create destroy fgetattr flush fsync fsyncdir ftruncate getattr getxattr init link
-  mkdir mknod open opendir read readdir readlink release releasedir rename rmdir setxattr statfs symlink
-  truncate unlink utimens write""".split /\s+/
-  for name in names
-    continue if sqlitefs[ name ]?
-    switch
-      when 'init', 'statfs', 'destroy'
-        continue
-      else
-        do ( name ) ->
-          message = "not implemented: #{name}"
-          sqlitefs[ name ] = ( _..., handler ) ->
-            warn message
-            handler result_codes[ 'error' ], message
+# #-----------------------------------------------------------------------------------------------------------
+# do ->
+#   names = """
+#   access chmod chown create destroy fgetattr flush fsync fsyncdir ftruncate getattr getxattr init link
+#   mkdir mknod open opendir read readdir readlink release releasedir rename rmdir setxattr statfs symlink
+#   truncate unlink utimens write""".split /\s+/
+#   for name in names
+#     continue if sqlitefs[ name ]?
+#     switch
+#       when 'init', 'statfs', 'destroy'
+#         continue
+#       else
+#         do ( name ) ->
+#           message = "not implemented: #{name}"
+#           sqlitefs[ name ] = ( _..., handler ) ->
+#             warn message
+#             handler result_codes[ 'error' ], message
+
+
+
+Proxy = require 'harmony-proxy' if global.Proxy.create?
+handler =
+  get: ( target, key ) ->
+    warn '>>>', key
+    return target[ key ]
+demofs = new Proxy ( require './demofs' ), handler
+
+
 
 #-----------------------------------------------------------------------------------------------------------
-# FUSE.mount mount_route, ( require './demofs' )
-FUSE.mount mount_route, sqlitefs
+FUSE.mount mount_route, demofs
+# FUSE.mount mount_route, sqlitefs
 
 #-----------------------------------------------------------------------------------------------------------
 process.on 'SIGINT', ->

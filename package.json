@@ -5,8 +5,8 @@
   "main": "lib/main.js",
   "scripts": {
     "build": "gulp --harmony build",
-    "start": "node --harmony lib/main.js",
-    "test": "npm build && node --harmony lib/tests.js"
+    "start": "node --harmony --harmony-proxies lib/main.js",
+    "test": "npm build && node --harmony --harmony-proxies lib/tests.js"
   },
   "author": "",
   "license": "MIT",

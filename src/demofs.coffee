@@ -37,6 +37,11 @@ ERROR                     = -1
 #-----------------------------------------------------------------------------------------------------------
 module.exports = demofs =
 
+  displayFolder:  yes
+  force:          yes
+  # options:        [ 'allow_other', 'fsname="demofs"', ]
+  options:        [ 'allow_root', 'fsname="demofs"', ]
+
   #---------------------------------------------------------------------------------------------------------
   readdir: ( route, handler ) ->
     echo "readdir         #{rpr route}"
@@ -115,4 +120,10 @@ module.exports = demofs =
     data = buffer.slice 0, length
     debug '©pqgx3', data
     debug '©pqgx3', data.toString()
-    handler 10
+    handler <Buffer.byteLength data, 'utf-8'
+
+
+
+
+
+
