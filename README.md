@@ -1,11 +1,3 @@
-<!-- START doctoc generated TOC please keep comment here to allow auto update -->
-<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
-
-- [fuseql](#fuseql)
-
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
 
 
 - [fuseql](#fuseql)
@@ -25,4 +17,11 @@ sudo apt-get install pkg-config
 # sudo apt-get install fuse
 sudo apt-get install libfuse-dev
 npm install -g hyperfs
+```
+
+
+https://github.com/bcle/fuse4js
+
+```bash
+npm install -g --unsafe-perm fuse4js
 ```

@@ -12,7 +12,7 @@
   "license": "MIT",
   "dependencies": {
     "cnd": "^1.0.8",
-    "fuse-bindings": "^2.5.0",
+    "fuse4js": "^0.1.12",
     "sqlite3": "^3.0.10"
   },
   "devDependencies": {
