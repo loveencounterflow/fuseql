@@ -24,290 +24,101 @@ echo                      = CND.echo.bind CND
 # immediately               = suspend.immediately
 # after                     = suspend.after
 # sleep                     = suspend.sleep
-later                     = setImmediate
+# later                     = setImmediate
 #...........................................................................................................
-FUSE                      = require 'fuse-bindings'
-mount_route               = './mnt'
-mount_locator             = njs_path.resolve __dirname, mount_route
+# FUSE                      = require 'fuse-bindings'
+# mount_route               = './mnt'
+# mount_locator             = njs_path.resolve __dirname, mount_route
 #...........................................................................................................
-SQLITE3   = ( require 'sqlite3' ).verbose()
-db_route  = 'fs.db'
-#...........................................................................................................
-warn "removing DB at #{db_route}"
-( require 'fs' ).unlinkSync db_route
-#...........................................................................................................
-db        = new SQLITE3.Database db_route
-# db        = new SQLITE3.Database ':memory:'
+SQLITE3                   = ( require 'sqlite3' ).verbose()
+ABSTRACTLEVELDOWN         = require 'abstract-leveldown'
+AbstractLevelDOWN         = ABSTRACTLEVELDOWN.AbstractLevelDOWN
+
+#-----------------------------------------------------------------------------------------------------------
+@_init = ->
+  """Optionally remove existing DB file; create DB file if missing; create `main` table if 
+  missing."""
+
+#-----------------------------------------------------------------------------------------------------------
+@put = ( db, key, value, handler ) ->
+
+#-----------------------------------------------------------------------------------------------------------
+@get = ( db, key, handler ) ->
+
+#-----------------------------------------------------------------------------------------------------------
+@delete = ( db, key, handler ) ->
+
+#-----------------------------------------------------------------------------------------------------------
+@create_readstream = ( db, settings, handler ) ->
+
+#-----------------------------------------------------------------------------------------------------------
+@create_keystream = ( db, settings, handler ) ->
+
+#-----------------------------------------------------------------------------------------------------------
+@create_valuestream = ( db, settings, handler ) ->
 
 
 
-fallback_time = +new Date()
-fallback_size = 100
-fallback_mode = 0o100644
-fallback_uid  = process.getuid()
-fallback_gid  = process.getgid()
-
-
-db.serialize ->
-  db.run 'CREATE TABLE IF NOT EXISTS lorem (info TEXT)'
+###
   db.run """
-  CREATE TABLE IF NOT EXISTS main (
-      home    TEXT    NOT NULL
-    , name    TEXT    NOT NULL
-    , mtime   INTEGER NOT NULL DEFAULT #{fallback_time}
-    , atime   INTEGER NOT NULL DEFAULT #{fallback_time}
-    , ctime   INTEGER NOT NULL DEFAULT #{fallback_time}
-    , size    INTEGER NOT NULL DEFAULT #{fallback_size}
-    , mode    INTEGER NOT NULL DEFAULT #{fallback_mode}
-    , uid     INTEGER NOT NULL DEFAULT #{fallback_uid}
-    , gid     INTEGER NOT NULL DEFAULT #{fallback_gid}
-    -- , content BLOB
-    , content TEXT DEFAULT ''
-    , PRIMARY KEY ( home, name )
-    )
+    CREATE TABLE IF NOT EXISTS `demo` (
+      `key`   BLOB PRIMARY KEY,
+      `value` BLOB )
+      """
   """
-  statement = db.prepare 'INSERT INTO main ( home, name, size, content ) VALUES ( ?, ?, ?, ? )'
-  for idx in [ 0 .. 10 ]
-    name    = "file-#{idx}.txt"
-    content = """
-      hello world from #{name}\n
-      """
-    length = Buffer.byteLength content, 'utf-8'
-    statement.run "/", name, length, content
-  statement.finalize()
-  # db.each 'SELECT rowid AS id, info FROM lorem', ( error, record ) ->
-  #   throw error if error?
-  #   debug '©ZYjLy', record
-  #   help record.id + ': ' + record.info
-  #   return null
-  # return null
+    INSERT OR REPLACE INTO `demo` ( `key`, `value` ) 
+    VALUES ( ?, ? )
+    """
+###
+
+#-----------------------------------------------------------------------------------------------------------
+FakeLevelDOWN = ( location ) ->
+  AbstractLevelDOWN.call this, location
+  return
+
+#-----------------------------------------------------------------------------------------------------------
+( require 'util' ).inherits FakeLevelDOWN, AbstractLevelDOWN
 
 
 #-----------------------------------------------------------------------------------------------------------
-result_codes =
-  'ok':         0
-  'error':      -1
-
-#-----------------------------------------------------------------------------------------------------------
-is_valid_route = ( route ) -> ( /^\/[^\/]+/ ).test route
-
-#-----------------------------------------------------------------------------------------------------------
-split_route = ( route ) -> [ route[ 0 ], route[ 1 .. ], ]
-
-#-----------------------------------------------------------------------------------------------------------
-sqlitefs =
-
-  #---------------------------------------------------------------------------------------------------------
-  displayFolder:  yes
-  force:          yes
-  options:        [ 'direct_io', 'allow_other', 'fsname="fuseql"', ]
-
-  #---------------------------------------------------------------------------------------------------------
-  readdir: ( route, handler ) ->
-    echo "readdir         #{rpr route}"
-    sql = """
-      SELECT  home, name
-      FROM    main
-      WHERE   home = ?
-      """
-    Z = []
-    # db.serialize =>
-      # statement = db.prepare sql
-      # statement.run route
-    on_data = ( error, record ) ->
-      throw error if error?
-      { home, name, } = record
-      # route = home + name
-      Z.push name
-    db.each sql, route, on_data, ( error, count ) =>
-      throw error if error?
-      help "retrieved #{count} records"
-      debug '©U47Yh', Z
-      handler result_codes[ 'ok' ], Z
-  # if route == '/'
-    #   filenames = ( "file-#{idx}" for idx in [ 0 .. 10 ] )
-    #   filenames.push 'test'
-    #   return handler result_codes[ 'ok' ], filenames
-    # handler result_codes[ 'ok' ]
+FakeLevelDOWN::_open = (options, callback) ->
+  # initialise a memory storage object
+  @_store = {}
+  # optional use of nextTick to be a nice async citizen
+  process.nextTick (->
+    callback null, this
     return
-
-  #---------------------------------------------------------------------------------------------------------
-  getattr: ( route, handler ) ->
-    info "getattr         #{rpr route}"
-    switch route
-      when '/' #, '/._.', '/.hidden', '/mach_kernel'
-        handler result_codes[ 'ok' ],
-          mtime: new Date()
-          atime: new Date()
-          ctime: new Date()
-          size: 100
-          mode: 16877
-          uid: process.getuid()
-          gid: process.getgid()
-      else
-        return handler result_codes[ 'error' ], "illegal route #{rpr route}" unless is_valid_route route
-        [ home, name, ] = split_route route
-        sql = """
-          SELECT  mtime, atime, ctime, size, mode, uid, gid
-          FROM    main
-          WHERE   home = ? AND name = ?
-          """
-        db.get sql, home, name, ( error, record ) ->
-          throw error if error?
-          return handler result_codes[ 'ok' ] unless record?
-          # debug '©nUEmT', record
-          # { home
-          #   name
-          #   mtime
-          #   atime
-          #   ctime
-          #   size
-          #   mode
-          #   uid
-          #   gid     } = record
-          # # route         = home + name
-          file_description =
-            mtime:  new Date record[ 'mtime' ]
-            atime:  new Date record[ 'atime' ]
-            ctime:  new Date record[ 'ctime' ]
-            size:   record[ 'size'  ]
-            mode:   record[ 'mode'  ]
-            uid:    record[ 'uid'   ]
-            gid:    record[ 'gid'   ]
-          debug '©hFS9F', file_description
-          handler result_codes[ 'ok' ], file_description
-      # else
-      #   handler FUSE.ENOENT
-    return null
-
-  #---------------------------------------------------------------------------------------------------------
-  open: ( route, flags, handler ) ->
-    info "open            #{rpr route}, #{rpr flags}"
-    # 42 is an fd
-    handler result_codes[ 'ok' ], 42
-    return
-
-  #---------------------------------------------------------------------------------------------------------
-  read: ( route, fd, buffer, length, position, handler ) ->
-    info "read            #{rpr route}, #{rpr fd}, #{rpr buffer}, #{rpr length}, #{rpr position}"
-    return handler result_codes[ 'error' ], "illegal route #{rpr route}" unless is_valid_route route
-    [ home, name, ] = split_route route
-    sql             = """
-      SELECT  content
-      FROM    main
-      WHERE   home = ? AND name = ?
-      """
-    db.get sql, home, name, ( error, record ) ->
-      throw error if error?
-      return handler result_codes[ 'ok' ] unless record?
-      debug '©B30YQ', record
-      { content } = record
-      content     = content.slice position
-      return handler 0 if content.length is 0
-      ### TAINT content must not be longer than buffer ###
-      buffer.write content, 'utf-8'
-      handler Buffer.byteLength content, 'utf-8'
-    return null
-
-  #---------------------------------------------------------------------------------------------------------
-  write: ( route, fd, buffer, length, position, handler ) ->
-    info "write           #{rpr route}, #{rpr fd}, #{rpr buffer}, #{rpr length}, #{rpr position}"
-    data = buffer.slice 0, length
-    debug '©pqgx3', data
-    debug '©pqgx3', data.toString()
-    handler 10
-    # db.serialize ->
-    #   sql = """
-    #     INSERT INTO main
-    #       ( home, name, size, content )
-    #       VALUES ( ?, ?, ?, ? )"""
-    #   statement = db.prepare sql
-    #   for idx in [ 0 .. 10 ]
-    #     name    = "file-#{idx}.txt"
-    #     content = """
-    #       hello world from #{name}\n
-    #       """
-    #     length = Buffer.byteLength content, 'utf-8'
-    #     statement.run "/", name, length, content
-    #   statement.finalize()
-
-  #---------------------------------------------------------------------------------------------------------
-  access: ( route, mode, handler ) ->
-    info "access          #{rpr route}, #{rpr mode}"
-    handler result_codes[ 'ok' ]
-
-  #---------------------------------------------------------------------------------------------------------
-  release: ( route, fd, handler ) ->
-    info "release         #{rpr route}, #{rpr fd}"
-    handler result_codes[ 'ok' ]
-
-  #---------------------------------------------------------------------------------------------------------
-  statfs: ( route, handler ) ->
-    info "statfs          #{rpr route}"
-    fs_description =
-      bsize:    1000000
-      frsize:   1000000
-      blocks:   1000000
-      bfree:    1000000
-      bavail:   1000000
-      files:    1000000
-      ffree:    1000000
-      favail:   1000000
-      fsid:     1000000
-      flag:     1000000
-      namemax:  1000000
-    handler result_codes[ 'ok' ], fs_description
-
-# #-----------------------------------------------------------------------------------------------------------
-# do ->
-#   names = """
-#   access chmod chown create destroy fgetattr flush fsync fsyncdir ftruncate getattr getxattr init link
-#   mkdir mknod open opendir read readdir readlink release releasedir rename rmdir setxattr statfs symlink
-#   truncate unlink utimens write""".split /\s+/
-#   for name in names
-#     continue if sqlitefs[ name ]?
-#     switch
-#       when 'init', 'statfs', 'destroy'
-#         continue
-#       else
-#         do ( name ) ->
-#           message = "not implemented: #{name}"
-#           sqlitefs[ name ] = ( _..., handler ) ->
-#             warn message
-#             handler result_codes[ 'error' ], message
-
-
-
-Proxy = require 'harmony-proxy' if global.Proxy.create?
-handler =
-  get: ( target, key ) ->
-    warn '>>>', key
-    return target[ key ]
-demofs = new Proxy ( require './demofs' ), handler
-
-
+  ).bind(this)
+  return
 
 #-----------------------------------------------------------------------------------------------------------
-FUSE.mount mount_route, demofs
-# FUSE.mount mount_route, sqlitefs
+FakeLevelDOWN::_put = (key, value, options, callback) ->
+  key = '_' + key
+  # safety, to avoid key='__proto__'-type skullduggery 
+  @_store[key] = value
+  process.nextTick callback
+  return
 
 #-----------------------------------------------------------------------------------------------------------
-process.on 'SIGINT', ->
-  warn "unmounting..."
-  db.close()
-  FUSE.unmount mount_route, ->
-    info "done"
-    process.exit()
+FakeLevelDOWN::_get = (key, options, callback) ->
+  value = @_store['_' + key]
+  if value == undefined
+    # 'NotFound' error, consistent with LevelDOWN API
+    return process.nextTick(->
+      callback new Error('NotFound')
+      return
+    )
+  process.nextTick ->
+    callback null, value
     return
   return
 
+#-----------------------------------------------------------------------------------------------------------
+FakeLevelDOWN::_del = (key, options, callback) ->
+  delete @_store['_' + key]
+  process.nextTick callback
+  return
 
-
-
-
-
-
-
-
-
+#-----------------------------------------------------------------------------------------------------------
+module.exports = FakeLevelDOWN
 
