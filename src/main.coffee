@@ -30,95 +30,24 @@ echo                      = CND.echo.bind CND
 # mount_route               = './mnt'
 # mount_locator             = njs_path.resolve __dirname, mount_route
 #...........................................................................................................
-SQLITE3                   = ( require 'sqlite3' ).verbose()
-ABSTRACTLEVELDOWN         = require 'abstract-leveldown'
-AbstractLevelDOWN         = ABSTRACTLEVELDOWN.AbstractLevelDOWN
-
-#-----------------------------------------------------------------------------------------------------------
-@_init = ->
-  """Optionally remove existing DB file; create DB file if missing; create `main` table if 
-  missing."""
-
-#-----------------------------------------------------------------------------------------------------------
-@put = ( db, key, value, handler ) ->
-
-#-----------------------------------------------------------------------------------------------------------
-@get = ( db, key, handler ) ->
-
-#-----------------------------------------------------------------------------------------------------------
-@delete = ( db, key, handler ) ->
-
-#-----------------------------------------------------------------------------------------------------------
-@create_readstream = ( db, settings, handler ) ->
-
-#-----------------------------------------------------------------------------------------------------------
-@create_keystream = ( db, settings, handler ) ->
-
-#-----------------------------------------------------------------------------------------------------------
-@create_valuestream = ( db, settings, handler ) ->
-
-
-
-###
-  db.run """
-    CREATE TABLE IF NOT EXISTS `demo` (
-      `key`   BLOB PRIMARY KEY,
-      `value` BLOB )
-      """
-  """
-    INSERT OR REPLACE INTO `demo` ( `key`, `value` ) 
-    VALUES ( ?, ? )
-    """
-###
-
-#-----------------------------------------------------------------------------------------------------------
-FakeLevelDOWN = ( location ) ->
-  AbstractLevelDOWN.call this, location
-  return
-
-#-----------------------------------------------------------------------------------------------------------
-( require 'util' ).inherits FakeLevelDOWN, AbstractLevelDOWN
 
 
 #-----------------------------------------------------------------------------------------------------------
-FakeLevelDOWN::_open = (options, callback) ->
-  # initialise a memory storage object
-  @_store = {}
-  # optional use of nextTick to be a nice async citizen
-  process.nextTick (->
-    callback null, this
-    return
-  ).bind(this)
-  return
+@write = ( filename, data, settings, handler ) ->
+  switch arity = arguments.length
+    when 3
+      handler   = settings
+      settings  = {}
+    when 4
+      null
+    else
+      throw new Error "expected 3 or 4 arguments, got #{arity}"
+  encoding  = settings[ 'encoding'  ]
+  # mode      = settings[ 'mode'      ]
+  # flag      = settings[ 'flag'      ]
+  # key
 
-#-----------------------------------------------------------------------------------------------------------
-FakeLevelDOWN::_put = (key, value, options, callback) ->
-  key = '_' + key
-  # safety, to avoid key='__proto__'-type skullduggery 
-  @_store[key] = value
-  process.nextTick callback
-  return
-
-#-----------------------------------------------------------------------------------------------------------
-FakeLevelDOWN::_get = (key, options, callback) ->
-  value = @_store['_' + key]
-  if value == undefined
-    # 'NotFound' error, consistent with LevelDOWN API
-    return process.nextTick(->
-      callback new Error('NotFound')
-      return
-    )
-  process.nextTick ->
-    callback null, value
-    return
-  return
-
-#-----------------------------------------------------------------------------------------------------------
-FakeLevelDOWN::_del = (key, options, callback) ->
-  delete @_store['_' + key]
-  process.nextTick callback
-  return
-
-#-----------------------------------------------------------------------------------------------------------
-module.exports = FakeLevelDOWN
-
+HOLLERITH                 = require 'HOLLERITH'
+CND.dir CODEC = HOLLERITH[ 'CODEC' ]
+debug '©r4Y4M', CODEC[ 'sentinels' ]
+debug '©r4Y4M', CODEC[ 'typemarkers' ]
